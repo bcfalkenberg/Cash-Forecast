@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Archer Buyer - 18-Week Cash Flow Forecaster</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#080e14;color:#c8d8e8;font-family:'DM Sans',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:#0d1b2a;}
+::-webkit-scrollbar-thumb{background:#1e2d3d;border-radius:3px;}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;background:none;}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:#1e2d3d;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;border:2px solid #080e14;cursor:pointer;}
+.mono{font-family:'DM Mono',monospace;}
+.card{background:#0d1b2a;border:1px solid #1a2a3a;border-radius:12px;padding:16px 20px;margin-bottom:14px;}
+.ctitle{font-size:11px;color:#5a7a9a;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:12px;}
+.slbl{font-size:9px;color:#4ECDC4;text-transform:uppercase;letter-spacing:.12em;font-weight:700;padding:5px 8px;background:#0a1520;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+th,td{padding:4px 8px;white-space:nowrap;}
+th{font-size:9px;letter-spacing:.06em;border-bottom:1px solid #1a2a3a;}
+</style>
+</head>
+<body>
+<div id="root" style="display:none"></div>
+<div id="gate" style="position:fixed;inset:0;background:#080e14;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'DM Sans',sans-serif;">
+  <div style="background:#0d1b2a;border:1px solid #1a2a3a;border-radius:16px;padding:40px 48px;width:360px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.6)">
+    <div style="width:48px;height:48px;background:linear-gradient(135deg,#4ECDC4,#45B7D1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;color:#0a1520;margin:0 auto 20px">A</div>
+    <div style="font-size:18px;font-weight:800;color:#e8f4f8;margin-bottom:6px">Archer Buyer, Inc.</div>
+    <div style="font-size:11px;color:#3a5a7a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:28px">Cash Flow Forecaster</div>
+    <input id="pwInput" type="password" placeholder="Enter password"
+      style="width:100%;padding:11px 16px;background:#080e14;border:1px solid #1e2d3d;border-radius:8px;color:#c8d8e8;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:10px;"
+      onkeydown="if(event.key==='Enter')checkPw()"/>
+    <div id="pwErr" style="color:#FF6B6B;font-size:12px;margin-bottom:10px;min-height:18px;"></div>
+    <button onclick="checkPw()"
+      style="width:100%;padding:12px;background:linear-gradient(135deg,#4ECDC4,#45B7D1);border:none;border-radius:8px;color:#0a1520;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">
+      Access Dashboard
+    </button>
+  </div>
+</div>
+<script>
+  function checkPw() {
+    var val = document.getElementById('pwInput').value;
+    if (val === 'ArcherCashFlow') {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('root').style.display = 'block';
+    } else {
+      document.getElementById('pwErr').textContent = 'Incorrect password. Please try again.';
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
+    }
+  }
+  document.getElementById('pwInput').focus();
+</script>
+
+<script>
+// ================================================================
+//  UPDATE THIS SECTION EACH WEEK WITH NEW EXCEL DATA
+// ================================================================
+var MODEL_AS_OF  = "Apr 19, 2026";
+var MODEL_VER    = "v12";
+var WEEKS = [
+  {label:"Apr 13", ending:"Apr 19", isActual:true },
+  {label:"Apr 20", ending:"Apr 26", isActual:false},
+  {label:"Apr 27", ending:"May 3",  isActual:false},
+  {label:"May 4",  ending:"May 10", isActual:false},
+  {label:"May 11", ending:"May 17", isActual:false},
+  {label:"May 18", ending:"May 24", isActual:false},
+  {label:"May 25", ending:"May 31", isActual:false},
+  {label:"Jun 1",  ending:"Jun 7",  isActual:false},
+  {label:"Jun 8",  ending:"Jun 14", isActual:false},
+  {label:"Jun 15", ending:"Jun 21", isActual:false},
+  {label:"Jun 22", ending:"Jun 28", isActual:false},
+  {label:"Jun 29", ending:"Jul 5",  isActual:false},
+  {label:"Jul 6",  ending:"Jul 12", isActual:false},
+  {label:"Jul 13", ending:"Jul 19", isActual:false},
+  {label:"Jul 20", ending:"Jul 26", isActual:false},
+  {label:"Jul 27", ending:"Aug 2",  isActual:false},
+  {label:"Aug 3",  ending:"Aug 9",  isActual:false},
+  {label:"Aug 10", ending:"Aug 16", isActual:false},
+  {label:"Aug 17", ending:"Aug 23", isActual:false}
+];
+var AR_COLLECTIONS           = [22473299,1722200,16114320,1375855,3887496,2015764,8888274,2130289,1008672,1717255,4774,1309941,586275,29777,4774,1140046,4774,4774,4774];
+var BASE_BOOKING_COLLECTIONS = [0,0,0,0,678240,1186920,5868868,799949,2241013,2114718,6752484,1837282,4602044,4745006,6495113,2248620,6198220,6365052,5641211];
+var PAYROLL    = [0,1716709,3445522,330000,5181089,330000,4864094,330000,4861096,330000,330000,3495993,330000,4347763,330000,3813417,330000,5039652,330000];
+var FACILITY   = [0,0,74433,0,0,0,74433,0,0,0,0,74433,0,0,0,49433,0,0,0];
+var CONSULTING = [0,440176,492212,285793,285793,285793,285793,377976,377976,377976,377976,406318,418495,418495,418495,418495,286300,286300,286300];
+var OFFICE_EMP = [0,12640,29785,19792,19792,19792,19792,20452,20452,20452,20452,530764,34889,34889,34889,34889,19792,19792,19792];
+var EXP_REPORTS= [0,88304,95658,71855,71855,71855,71855,106237,106237,106237,106237,104627,103984,103984,103984,103984,88086,88086,88086];
+var SOFTWARE   = [0,2074771,1463171,436435,436435,436435,436435,452431,452431,452431,452431,440948,436354,436354,436354,436354,439149,439149,439149];
+var BIZ_DEV    = [0,22179,102408,114639,114639,114639,114639,227221,227221,227221,227221,108625,61187,61187,61187,61187,78286,78286,78286];
+var ROYALTY    = [0,0,735167,166774,41774,41774,41774,43167,43167,43167,43167,42172,41774,41774,41774,41774,41774,41774,41774];
+var MISC       = [0,0,6442,6234,6234,6234,6234,6442,6442,6442,6442,6293,6234,6234,6234,6234,6234,6234,6234];
+var TAXES      = [0,0,11046,378000,0,260000,525000,5000,378000,0,0,0,378000,160000,600000,0,378000,0,0];
+var ACQUISITION    = [0,0,0,0,0,0,0,0,0,0,12700000,0,0,0,0,0,0,0,0];
+var NON_OPS_C      = [0,685565,125298,156622,156622,156622,156622,156622,156622,156622,156622,125298,125298,125298,125298,125298,156622,156622,156622];
+var NON_OPS_ONETIME= [0,7155,67468,86745,86745,86745,86745,86745,86745,86745,86745,67468,67468,67468,67468,67468,86745,86745,86745];
+var INTEREST       = [0,0,140000,0,0,0,0,0,0,0,0,12597607,0,0,0,0,0,0,0];
+var TERM_LOAN      = [0,0,1300000,0,0,0,0,0,0,0,0,0,0,0,0,1300000,0,0,0];
+var DELAYED_DRAW   = [0,0,166250,0,0,0,0,0,0,0,0,0,0,0,0,166250,0,0,0];
+var LOAN_ADMIN     = [0,0,24792,0,0,0,0,0,0,0,0,0,0,0,0,25278,0,0,0];
+var TOTAL_OP_DISB  = [0,4354779,6455843,1809523,6157612,1566523,6440050,1568925,6473020,1563925,1563925,5210174,1810917,5610680,2032917,4965766,1667622,5999274,1289622];
+var TOTAL_NON_OP   = [0,692720,1823808,243367,243367,243367,243367,243367,243367,243367,12943367,12790373,192766,192766,192766,1684294,243367,243367,243367];
+var NET_CASH_FLOW  = [0,-3325299,7834669,-677035,-1835243,1392794,8073725,1117946,-3466703,2024681,-7750033,-14853324,3184636,-1028663,4274205,-3261394,4292005,127185,4112996];
+var ENDING_BALANCE_BASE = [22473299,19148000,26982669,26305634,24470391,25863185,33936909,35054855,31588153,33612834,25862801,11009477,14194113,13165450,17439655,14178262,18470267,18597452,22710448];
+var END_BALANCE_ACTUAL  = 22473299;
+// ================================================================
+//  END OF WEEKLY UPDATE SECTION
+// ================================================================
+
+var N = WEEKS.length;
+var TOTAL_OP_RECEIPTS = AR_COLLECTIONS.map(function(v,i){return v+BASE_BOOKING_COLLECTIONS[i];});
+
+var SCENARIOS = {
+  base:    {label:"Base Case",arMult:1.00,discMult:1.00,color:"#4ECDC4",desc:"Current model forecast"},
+  upside:  {label:"Upside",   arMult:1.10,discMult:0.92,color:"#45B7D1",desc:"+10% AR recovery, -8% discretionary"},
+  downside:{label:"Downside", arMult:0.88,discMult:1.08,color:"#f0c040",desc:"-12% AR recovery, +8% discretionary"},
+  stress:  {label:"Stress",   arMult:0.72,discMult:1.18,color:"#FF6B6B",desc:"-28% AR recovery, +18% discretionary"}
+};
+
+var state = {scenario:"base", bkgMult:1.0, collShift:0, view:"chart"};
+
+function setState(key, val) { state[key] = val; render(); }
+
+// Wire up delegated events after render
+document.addEventListener("click", function(e) {
+  var t = e.target.closest("[data-action]");
+  if (!t) return;
+  var action = t.getAttribute("data-action");
+  var val    = t.getAttribute("data-val");
+  if (action === "scenario") setState("scenario", val);
+  if (action === "view")     setState("view", val);
+});
+document.addEventListener("input", function(e) {
+  var t = e.target;
+  if (t.id === "sliderBkg")   setState("bkgMult",  parseFloat(t.value));
+  if (t.id === "sliderShift") setState("collShift", parseInt(t.value));
+});
+
+function fmt(n, compact) {
+  if (n == null || isNaN(n)) return "--";
+  var neg = n < 0, abs = Math.abs(n);
+  if (compact) {
+    if (abs >= 1e6) return (neg?"(":"") + "$" + (abs/1e6).toFixed(1) + "M" + (neg?")":"");
+    if (abs >= 1e3) return (neg?"(":"") + "$" + (abs/1e3).toFixed(0) + "K" + (neg?")":"");
+    return (neg?"(":"") + "$" + abs.toFixed(0) + (neg?")":"");
+  }
+  return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n);
+}
+
+function compute(scenKey, bkgMult, collShift) {
+  var sc = SCENARIOS[scenKey];
+  var isBase = (scenKey === "base" && bkgMult === 1.0 && collShift === 0);
+  var shiftedBk = [];
+  for (var i=0;i<N;i++) { var s=i-collShift; shiftedBk.push((s>=0&&s<N)?BASE_BOOKING_COLLECTIONS[s]*bkgMult:0); }
+  var out = [], bal = END_BALANCE_ACTUAL;
+  for (var i=0;i<N;i++) {
+    var isAct = WEEKS[i].isActual;
+    if (isBase) {
+      out.push({label:WEEKS[i].label,ending:WEEKS[i].ending,isActual:isAct,
+        arCollect:AR_COLLECTIONS[i], bkCollect:BASE_BOOKING_COLLECTIONS[i],
+        totalReceipts:TOTAL_OP_RECEIPTS[i], payroll:PAYROLL[i], facility:FACILITY[i], taxes:TAXES[i],
+        consulting:CONSULTING[i], software:SOFTWARE[i],
+        otherOp:OFFICE_EMP[i]+EXP_REPORTS[i]+BIZ_DEV[i]+ROYALTY[i]+MISC[i],
+        nonOpsC:NON_OPS_C[i]+NON_OPS_ONETIME[i], acquisition:ACQUISITION[i],
+        interest:INTEREST[i], termLoan:TERM_LOAN[i]+DELAYED_DRAW[i]+LOAN_ADMIN[i],
+        totalDisb:TOTAL_OP_DISB[i]+TOTAL_NON_OP[i], netCF:NET_CASH_FLOW[i],
+        endBalance:ENDING_BALANCE_BASE[i], baseBalance:ENDING_BALANCE_BASE[i]});
+      continue;
+    }
+    var arC  = isAct ? AR_COLLECTIONS[i] : AR_COLLECTIONS[i]*sc.arMult;
+    var bkC  = isAct ? BASE_BOOKING_COLLECTIONS[i] : shiftedBk[i];
+    var tot  = arC + bkC;
+    var fixD = PAYROLL[i]+FACILITY[i]+TAXES[i]+ACQUISITION[i]+INTEREST[i]+TERM_LOAN[i]+DELAYED_DRAW[i]+LOAN_ADMIN[i];
+    var discB= CONSULTING[i]+OFFICE_EMP[i]+EXP_REPORTS[i]+SOFTWARE[i]+BIZ_DEV[i]+ROYALTY[i]+MISC[i]+NON_OPS_C[i]+NON_OPS_ONETIME[i];
+    var discD= isAct ? discB : discB*sc.discMult;
+    var net  = tot - fixD - discD;
+    if (isAct) bal = END_BALANCE_ACTUAL; else bal += net;
+    out.push({label:WEEKS[i].label,ending:WEEKS[i].ending,isActual:isAct,
+      arCollect:arC, bkCollect:bkC, totalReceipts:tot,
+      payroll:PAYROLL[i], facility:FACILITY[i], taxes:TAXES[i],
+      consulting:isAct?CONSULTING[i]:CONSULTING[i]*sc.discMult,
+      software:isAct?SOFTWARE[i]:SOFTWARE[i]*sc.discMult,
+      otherOp:(OFFICE_EMP[i]+EXP_REPORTS[i]+BIZ_DEV[i]+ROYALTY[i]+MISC[i])*(isAct?1:sc.discMult),
+      nonOpsC:(NON_OPS_C[i]+NON_OPS_ONETIME[i])*(isAct?1:sc.discMult),
+      acquisition:ACQUISITION[i], interest:INTEREST[i],
+      termLoan:TERM_LOAN[i]+DELAYED_DRAW[i]+LOAN_ADMIN[i],
+      totalDisb:fixD+discD, netCF:net,
+      endBalance:isAct?END_BALANCE_ACTUAL:bal, baseBalance:ENDING_BALANCE_BASE[i]});
+  }
+  return out;
+}
+
+function niceAxis(minV, maxV) {
+  var range = maxV - minV || 1e6, rough = range/5;
+  var mag = Math.pow(10, Math.floor(Math.log10(rough)));
+  var nice = [1,2,2.5,5,10].map(function(f){return f*mag;}).filter(function(f){return f>=rough;})[0] || mag*10;
+  var lo = Math.floor(minV/nice)*nice, hi = Math.ceil(maxV/nice)*nice;
+  var ticks = []; for (var v=lo; v<=hi+nice*0.01; v+=nice) ticks.push(Math.round(v));
+  return {min:lo, max:hi, ticks:ticks};
+}
+
+
+function showTip(evt, lines) {
+  var tip = document.getElementById('chartTip');
+  if (!tip) return;
+  var html = lines.map(function(l){ return '<div style="display:flex;justify-content:space-between;gap:20px;padding:1px 0"><span style="color:#8899aa">'+l[0]+'</span><span style="font-weight:700;color:'+l[2]+'">'+l[1]+'</span></div>'; }).join('');
+  tip.innerHTML = html;
+  tip.style.display = 'block';
+  moveTip(evt);
+}
+function moveTip(evt) {
+  var tip = document.getElementById('chartTip');
+  if (!tip || tip.style.display === 'none') return;
+  var x = evt.clientX + 14, y = evt.clientY - 10;
+  if (x + 180 > window.innerWidth) x = evt.clientX - 190;
+  tip.style.left = x + 'px';
+  tip.style.top  = y + 'px';
+}
+function hideTip() {
+  var tip = document.getElementById('chartTip');
+  if (tip) tip.style.display = 'none';
+}
+
+function areaChart(data, keyFn, keyFn2, color, color2, W, H) {
+  W=W||680; H=H||200;
+  var L=64,R=8,T=8,B=24,w=W-L-R,h=H-T-B;
+  var vals=data.map(keyFn), vals2=keyFn2?data.map(keyFn2):[];
+  var all=vals.concat(vals2);
+  var ax=niceAxis(Math.min.apply(null,[0].concat(all)), Math.max.apply(null,all));
+  var xS=w/(data.length-1);
+  var toY=function(v){return T+h*(1-(v-ax.min)/(ax.max-ax.min));};
+  var pts=data.map(function(d,i){return (L+i*xS).toFixed(1)+","+toY(keyFn(d)).toFixed(1);}).join(" ");
+  var n=data.length-1;
+  var fillPts=L+","+toY(keyFn(data[0])).toFixed(1)+" "+pts+" "+(L+n*xS).toFixed(1)+","+toY(keyFn(data[n])).toFixed(1)+" "+(L+n*xS).toFixed(1)+","+(T+h)+" "+L+","+(T+h);
+  var uid="g"+Math.random().toString(36).slice(2,6);
+  var grid=ax.ticks.map(function(v){var y=toY(v).toFixed(1);return '<line x1="'+L+'" y1="'+y+'" x2="'+(L+w)+'" y2="'+y+'" stroke="#141f2e" stroke-dasharray="3,3"/><text x="'+(L-4)+'" y="'+(parseFloat(y)+4)+'" text-anchor="end" fill="#4a6a8a" font-size="9">'+fmt(v,true)+'</text>';}).join("");
+  var xlbls=data.map(function(d,i){return '<text x="'+(L+i*xS).toFixed(1)+'" y="'+(T+h+16)+'" text-anchor="middle" fill="#4a6a8a" font-size="8">'+d.label+'</text>';}).join("");
+  var refY=toY(10e6); var refL=(refY>=T&&refY<=T+h)?'<line x1="'+L+'" y1="'+refY.toFixed(1)+'" x2="'+(L+w)+'" y2="'+refY.toFixed(1)+'" stroke="#FF6B6B" stroke-dasharray="4,3" opacity=".6"/><text x="'+(L+w-2)+'" y="'+(refY-3).toFixed(1)+'" text-anchor="end" fill="#FF6B6B" font-size="8">$10M floor</text>':"";
+  var b2=""; if(keyFn2){var p2=data.map(function(d,i){return (L+i*xS).toFixed(1)+","+toY(keyFn2(d)).toFixed(1);}).join(" ");b2='<polyline points="'+p2+'" fill="none" stroke="'+color2+'" stroke-width="1.5" stroke-dasharray="4,3" opacity=".5"/>';}
+  var dots=data.map(function(d,i){return d.isActual?'<circle cx="'+(L+i*xS).toFixed(1)+'" cy="'+toY(keyFn(d)).toFixed(1)+'" r="4" fill="white" stroke="'+color+'" stroke-width="2"/>':"";}).join("");
+  // Hover hit areas + vertical crosshair
+  var cid="c"+uid;
+  var hitAreas=data.map(function(d,i){
+    var x=(L+i*xS).toFixed(1);
+    var lines=[['Week ending',d.ending,'#8899aa'],['Balance',fmt(keyFn(d),true),color]];
+    if(keyFn2) lines.push(['Base',fmt(keyFn2(d),true),'#5a7a9a']);
+    var esc=JSON.stringify(lines).replace(/"/g,"&quot;");
+    return '<rect x="'+(parseFloat(x)-xS/2)+'" y="'+T+'" width="'+xS+'" height="'+h+'" fill="transparent" '+
+      'onmouseenter="showTip(event,'+esc+')" onmousemove="moveTip(event)" onmouseleave="hideTip()" '+
+      'onmouseenter="document.getElementById(\''+cid+'\').setAttribute(\'x1\','+x+');document.getElementById(\''+cid+'\').setAttribute(\'x2\','+x+');document.getElementById(\''+cid+'\').style.display=\'block\';showTip(event,'+esc+')" '+
+      'onmouseleave="document.getElementById(\''+cid+'\').style.display=\'none\';hideTip()"/>';
+  }).join("");
+  return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+
+    '<defs><linearGradient id="'+uid+'" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="5%" stop-color="'+color+'" stop-opacity=".28"/><stop offset="95%" stop-color="'+color+'" stop-opacity=".02"/>'+
+    '</linearGradient></defs>'+
+    grid+
+    '<line x1="'+L+'" y1="'+T+'" x2="'+L+'" y2="'+(T+h)+'" stroke="#1e2d3d"/>'+
+    refL+b2+
+    '<polygon points="'+fillPts+'" fill="url(#'+uid+')"/>'+
+    '<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2.5"/>'+
+    dots+
+    '<line id="'+cid+'" x1="'+L+'" y1="'+T+'" x2="'+L+'" y2="'+(T+h)+'" stroke="'+color+'" stroke-width="1" opacity=".4" style="display:none" pointer-events="none"/>'+
+    hitAreas+
+    xlbls+'</svg>';
+}
+
+function barChart(data, key1, key2, c1, c2, W, H, stacked) {
+  W=W||680; H=H||170;
+  var L=64,R=8,T=8,B=24,w=W-L-R,h=H-T-B;
+  var v1s=data.map(function(d){return d[key1]||0;}), v2s=key2?data.map(function(d){return d[key2]||0;}):[0];
+  var combined=stacked?v1s.map(function(v,i){return v+(v2s[i]||0);}):v1s.concat(v2s);
+  var ax=niceAxis(Math.min.apply(null,[0].concat(combined)), Math.max.apply(null,combined));
+  var bW=Math.min(18,w/data.length*0.5);
+  var toY=function(v){return T+h*(1-(v-ax.min)/(ax.max-ax.min));};
+  var zY=toY(0);
+  var grid=ax.ticks.map(function(v){var y=toY(v).toFixed(1);return '<line x1="'+L+'" y1="'+y+'" x2="'+(L+w)+'" y2="'+y+'" stroke="#141f2e" stroke-dasharray="3,3"/><text x="'+(L-4)+'" y="'+(parseFloat(y)+4)+'" text-anchor="end" fill="#4a6a8a" font-size="9">'+fmt(v,true)+'</text>';}).join("");
+  var xlbls=data.map(function(d,i){return '<text x="'+(L+i*w/(data.length-1)).toFixed(1)+'" y="'+(T+h+16)+'" text-anchor="middle" fill="#4a6a8a" font-size="8">'+d.label+'</text>';}).join("");
+  var bars=data.map(function(d,i){
+    var x=L+i*w/(data.length-1), v1=d[key1]||0, v2=key2?(d[key2]||0):0;
+    var lines=[['Week ending',d.ending,'#8899aa']];
+    if(key1) lines.push([key1,fmt(v1,true),v1<0?'#FF6B6B':c1]);
+    if(key2) lines.push([key2,fmt(v2,true),c2]);
+    var esc=JSON.stringify(lines).replace(/"/g,"&quot;");
+    var hover='onmouseenter="showTip(event,'+esc+')" onmousemove="moveTip(event)" onmouseleave="hideTip()"';
+    if(stacked){
+      var yM=toY(v1),yT=toY(v1+v2);
+      return '<rect x="'+(x-bW/2).toFixed(1)+'" y="'+yM.toFixed(1)+'" width="'+bW+'" height="'+Math.max(1,zY-yM).toFixed(1)+'" fill="'+c1+'" rx="2" '+hover+'/>'+
+        (v2?'<rect x="'+(x-bW/2).toFixed(1)+'" y="'+yT.toFixed(1)+'" width="'+bW+'" height="'+Math.max(1,yM-yT).toFixed(1)+'" fill="'+c2+'" rx="2" '+hover+'/>':'');
+    }
+    var off=key2?bW*0.55:0, y1=v1>=0?toY(v1):zY, h1=Math.max(1,Math.abs(toY(v1)-zY)), y2=toY(v2), h2=Math.max(1,zY-y2);
+    return '<rect x="'+(x-off-bW/2).toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+bW+'" height="'+h1.toFixed(1)+'" fill="'+(v1<0?"#FF4444":c1)+'" rx="2" '+hover+'/>'+
+      (key2?'<rect x="'+(x+off-bW/2).toFixed(1)+'" y="'+y2.toFixed(1)+'" width="'+bW+'" height="'+h2.toFixed(1)+'" fill="'+c2+'" rx="2" '+hover+'/>':'');
+  }).join("");
+  return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+
+    grid+
+    '<line x1="'+L+'" y1="'+zY.toFixed(1)+'" x2="'+(L+w)+'" y2="'+zY.toFixed(1)+'" stroke="#2a3a4a"/>'+
+    bars+xlbls+'</svg>';
+}
+
+function h(tag, attrs, content) {
+  var a = Object.keys(attrs||{}).map(function(k){return ' '+k+'="'+attrs[k]+'"';}).join("");
+  return "<"+tag+a+">"+(content||"")+"</"+tag+">";
+}
+
+function render() {
+  var data = compute(state.scenario, state.bkgMult, state.collShift);
+  var sc = SCENARIOS[state.scenario];
+  var fcst = data.filter(function(d){return !d.isActual;});
+  var endBals = fcst.map(function(d){return d.endBalance;});
+  var minBal = Math.min.apply(null, endBals);
+  var minBalWk = fcst.filter(function(d){return d.endBalance===minBal;})[0];
+  var finalBal = fcst[fcst.length-1] ? fcst[fcst.length-1].endBalance : 0;
+  var totalReceipts = fcst.reduce(function(s,d){return s+d.totalReceipts;},0);
+  var totalBkgCash  = fcst.reduce(function(s,d){return s+d.bkCollect;},0);
+  var totalNetCF    = fcst.reduce(function(s,d){return s+d.netCF;},0);
+  var planBkgTotal  = BASE_BOOKING_COLLECTIONS.reduce(function(s,v){return s+v;},0);
+  var bkgLabel = state.bkgMult===1.0 ? "Plan" : (state.bkgMult>1.0?"+":"")+((state.bkgMult-1)*100).toFixed(0)+"% vs Plan";
+  var shiftLabel = state.collShift===0 ? "On Plan" : (state.collShift>0?"+":"")+state.collShift+" wk";
+
+  // ── CHARTS VIEW
+  var mainContent = "";
+  if (state.view === "chart") {
+    var showBase = state.scenario !== "base";
+    mainContent =
+      '<div class="card">' +
+        '<div class="ctitle">Ending Cash Balance - 18 Weeks'+(showBase?" (dashed = Base Case)":"")+'</div>' +
+        '<div style="overflow-x:auto">'+areaChart(data,function(d){return d.endBalance;},showBase?function(d){return d.baseBalance;}:null,sc.color,"#3a5a7a",680,205)+'</div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
+        '<div class="card" style="margin-bottom:0"><div class="ctitle">Weekly Net Cash Flow</div><div style="overflow-x:auto">'+barChart(data,"netCF",null,sc.color,null,335,160)+'</div></div>'+
+        '<div class="card" style="margin-bottom:0"><div class="ctitle">Receipts: AR vs Bookings</div><div style="overflow-x:auto">'+barChart(data,"arCollect","bkCollect","#4ECDC4","#a78bfa",335,160,true)+'</div></div>'+
+      '</div>'+
+      '<div class="card"><div class="ctitle">Total Receipts vs. Disbursements</div><div style="overflow-x:auto">'+barChart(data,"totalReceipts","totalDisb","#4ECDC4","#FF6B6B",680,155)+'</div></div>';
+
+  // ── TABLE VIEW
+  } else if (state.view === "table") {
+    var rows = [
+      {section:"RECEIPTS"},
+      {label:"AR Collections",     key:"arCollect",     pos:true},
+      {label:"Bookings Cash",       key:"bkCollect",     pos:true, accent:"#a78bfa"},
+      {label:"Total Receipts",      key:"totalReceipts", pos:true, bold:true},
+      {section:"FIXED DISBURSEMENTS"},
+      {label:"Payroll & Benefits",  key:"payroll"},
+      {label:"Facility",            key:"facility"},
+      {label:"Taxes",               key:"taxes"},
+      {label:"Interest",            key:"interest"},
+      {label:"Term Loan Payment",   key:"termLoan"},
+      {label:"Acquisition Payout",  key:"acquisition"},
+      {section:"VARIABLE DISBURSEMENTS"},
+      {label:"Consulting (Ops)",    key:"consulting"},
+      {label:"Software & Licenses", key:"software"},
+      {label:"Other Op Disb",       key:"otherOp"},
+      {label:"Non-Ops Consulting",  key:"nonOpsC"},
+      {section:"SUMMARY"},
+      {label:"Net Cash Flow",       key:"netCF",       bold:true, signed:true},
+      {label:"Ending Cash Balance", key:"endBalance",  bold:true, balance:true}
+    ];
+    var thead = "<tr>" + h("th",{style:"text-align:left;color:#3a5a7a"},"LINE ITEM") +
+      data.map(function(d){return h("th",{style:"text-align:right;color:"+(d.isActual?"#7ec8e3":"#3a5a7a")},d.label+(d.isActual?"*":""));}).join("") +
+      h("th",{style:"text-align:right;color:#5a7a9a"},"18W TOT") + "</tr>";
+    var tbody = rows.map(function(row){
+      if (row.section) return "<tr>"+h("td",{colspan:data.length+2,class:"slbl"},row.section)+"</tr>";
+      var total = data.reduce(function(s,d){return s+(d[row.key]||0);},0);
+      var cellColor = function(v) {
+        if(row.balance) return v<10e6?"#FF6B6B":v<15e6?"#f0c040":sc.color;
+        if(row.signed)  return v<0?"#FF6B6B":"#4ECDC4";
+        if(row.pos)     return row.accent||"#7ec8e3";
+        return v>0?"#FF9999":"#5a7a9a";
+      };
+      var dispVal = function(v) {
+        if(row.pos||row.balance||row.signed) return fmt(v,true);
+        return v>0?"("+fmt(v,true)+")":"--";
+      };
+      var cells = data.map(function(d){
+        var v=d[row.key]||0;
+        return h("td",{style:"text-align:right;color:"+cellColor(v)+";font-weight:"+(row.bold?700:400)},dispVal(v));
+      }).join("");
+      var tc=cellColor(total), td=row.balance?"--":dispVal(total);
+      return "<tr style='border-top:"+(row.bold?"1px solid #1a2a3a":"none")+"'>"+
+        h("td",{style:"color:"+(row.accent||"#7a9ab8")+";font-weight:"+(row.bold?700:400)+";text-align:left"},row.label)+
+        cells+h("td",{style:"text-align:right;color:"+tc+";font-weight:700"},td)+"</tr>";
+    }).join("");
+    mainContent = '<div class="card" style="overflow-x:auto">'+
+      '<div class="ctitle">18-Week Detail - '+sc.label+' / Bookings '+bkgLabel+'</div>'+
+      '<table class="mono"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>'+
+      '<div style="font-size:9px;color:#2a4a6a;margin-top:8px">* Actual week. Parentheses = outflows.</div>'+
+      '</div>';
+
+  // ── BRIDGE VIEW
+  } else {
+    var fcstW = data.filter(function(d){return !d.isActual;});
+    var bridgeCards = fcstW.slice(0,9).map(function(d,i){
+      var prevBal = i===0 ? END_BALANCE_ACTUAL : fcstW[i-1].endBalance;
+      var brows = [
+        {label:"Begin Balance",      val:prevBal,            c:"#8899aa"},
+        {label:"AR Collections",     val:d.arCollect,        c:"#4ECDC4"},
+        {label:"Bookings Cash",      val:d.bkCollect,        c:"#a78bfa"},
+        {label:"Payroll & Benefits", val:-d.payroll,         c:"#FF6B6B"},
+        {label:"Consulting",         val:-d.consulting,      c:"#ff9999"},
+        {label:"Software",           val:-d.software,        c:"#ff9999"},
+        {label:"Taxes",              val:-d.taxes,           c:"#f0c040"},
+        {label:"Other Op + Non-Op",  val:-(d.otherOp+d.nonOpsC), c:"#ff9999"}
+      ];
+      if(d.acquisition>0) brows.push({label:"Acquisition Payout",val:-d.acquisition,c:"#FF6B6B"});
+      if(d.interest>0)    brows.push({label:"Interest Payment",   val:-d.interest,   c:"#FF6B6B"});
+      if(d.termLoan>0)    brows.push({label:"Term Loan Payment",  val:-d.termLoan,   c:"#f0c040"});
+      var balColor = d.endBalance<10e6?"#FF6B6B":d.endBalance<15e6?"#f0c040":sc.color;
+      brows.push({label:"Ending Balance", val:d.endBalance, c:balColor, bold:true});
+      var rHtml = brows.filter(function(r){return r.val!==0;}).map(function(r){
+        return '<div style="display:flex;justify-content:space-between;padding:2px 0;'+(r.bold?"border-top:1px solid #1a2a3a;margin-top:3px":"")+'">' +
+          '<span style="font-size:9px;color:#4a6a8a">'+r.label+'</span>' +
+          '<span style="font-size:9px;color:'+r.c+';font-weight:'+(r.bold?700:400)+'" class="mono">'+fmt(r.val,true)+'</span></div>';
+      }).join("");
+      return '<div style="background:#0a1520;border-radius:10px;padding:12px 14px;border:1px solid '+(d.endBalance<10e6?"#FF6B6B44":"#1a2a3a")+'">'+
+        '<div style="font-size:11px;color:'+sc.color+';font-weight:700;margin-bottom:8px">Week of '+d.label+'</div>'+rHtml+'</div>';
+    }).join("");
+    mainContent = '<div style="font-size:11px;color:#5a7a9a;text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:12px">Weekly Cash Bridge - First 9 Forecast Weeks</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">'+bridgeCards+'</div>';
+  }
+
+  // ── KPIs
+  var kpiColor = function(v){return v>15e6?"#4ECDC4":v>8e6?"#f0c040":"#FF6B6B";};
+  var kpis = [
+    {label:"Ending Balance (Wk 18)", val:finalBal,      color:kpiColor(finalBal)},
+    {label:"Minimum Balance",         val:minBal,        color:kpiColor(minBal), sub:"Week of "+(minBalWk?minBalWk.label:"")},
+    {label:"Net Cash Flow (18W)",     val:totalNetCF,    color:totalNetCF>=0?"#4ECDC4":"#FF6B6B"},
+    {label:"Total Receipts (18W)",    val:totalReceipts, color:"#c8d8e8"}
+  ];
+
+  // ── SCENARIO BUTTONS
+  var scenBtns = Object.keys(SCENARIOS).map(function(key){
+    var s = SCENARIOS[key];
+    var active = state.scenario === key;
+    var bdr = active ? s.color : "#1e2d3d";
+    var bg  = active ? s.color + "14" : "transparent";
+    var clr = active ? s.color : "#5a7a9a";
+    var fw  = active ? 700 : 400;
+    return "<button data-action=\"scenario\" data-val=\"" + key + "\" style=\"display:block;width:100%;text-align:left;padding:8px 10px;margin-bottom:5px;border-radius:7px;border:1px solid " + bdr + ";background:" + bg + ";color:" + clr + ";font-size:12px;font-weight:" + fw + "\">" +
+      "<div style=\"font-weight:700\">" + s.label + "</div><div style=\"font-size:10px;opacity:.7;margin-top:1px\">" + s.desc + "</div></button>";
+  }).join("");
+
+  // ── VIEW TABS
+  var tabs = [["chart","Charts"],["table","Detail Table"],["bridge","Weekly Bridge"]].map(function(v){
+    var active = state.view === v[0];
+    var bg  = active ? "#1e2d3d" : "transparent";
+    var clr = active ? "#c8d8e8" : "#5a7a9a";
+    var fw  = active ? 600 : 400;
+    return "<button data-action=\"view\" data-val=\"" + v[0] + "\" style=\"padding:6px 14px;border-radius:6px;border:none;background:" + bg + ";color:" + clr + ";font-size:12px;font-weight:" + fw + "\">" + v[1] + "</button>";
+  }).join("");
+
+  document.getElementById("root").innerHTML =
+    // HEADER
+    '<div style="background:#0a1520;border-bottom:1px solid #1a2a3a;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">' +
+      '<div style="display:flex;align-items:center;gap:12px">' +
+        '<div style="width:32px;height:32px;background:linear-gradient(135deg,#4ECDC4,#45B7D1);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#0a1520">A</div>' +
+        '<div><div style="font-size:16px;font-weight:800;color:#e8f4f8;letter-spacing:-0.3px">Archer Buyer, Inc - Cash Flow Forecaster</div>' +
+        '<div style="font-size:9px;color:#3a5a7a;letter-spacing:.1em;text-transform:uppercase;margin-top:1px">18-Week Consolidated - USD - As of '+MODEL_AS_OF+' - Model '+MODEL_VER+'</div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        '<span style="background:'+sc.color+'1a;color:'+sc.color+';border:1px solid '+sc.color+'44;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700">'+sc.label+'</span>' +
+        (state.bkgMult!==1.0||state.collShift!==0?'<span style="background:#a78bfa1a;color:#a78bfa;border:1px solid #a78bfa44;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700">Bookings: '+bkgLabel+' / '+shiftLabel+'</span>':"") +
+      '</div>' +
+    '</div>' +
+    // BODY
+    '<div style="display:flex;flex:1;overflow:hidden">' +
+      // LEFT PANEL
+      '<div style="width:265px;min-width:265px;background:#090f19;border-right:1px solid #1a2a3a;padding:16px 14px;overflow-y:auto">' +
+        '<div style="margin-bottom:18px"><div style="font-size:10px;color:#3a5a7a;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:8px">Scenario</div>'+scenBtns+'</div>' +
+        '<div style="border-top:1px solid #1a2a3a;padding-top:16px;margin-bottom:16px">' +
+          '<div style="font-size:10px;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:3px">Bookings Sensitivity</div>' +
+          '<div style="font-size:10px;color:#3a5a7a;margin-bottom:14px">Adjust volume and timing of new booking cash receipts</div>' +
+          '<div style="margin-bottom:16px">' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:#8899aa;text-transform:uppercase;letter-spacing:.08em">Bookings Volume</span><span style="font-size:13px;font-weight:700;color:#a78bfa" class="mono">'+(state.bkgMult===1.0?"100% (Plan)":(state.bkgMult*100).toFixed(0)+"% of Plan")+'</span></div>' +
+            '<input id="sliderBkg" type="range" min="0.3" max="2.0" step="0.05" value="'+state.bkgMult+'" style="accent-color:#a78bfa"/>' +
+            '<div style="font-size:10px;color:#3a5a7a;margin-top:3px">Scales new booking cash vs. FP&amp;A plan</div>' +
+          '</div>' +
+          '<div style="margin-bottom:14px">' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:#8899aa;text-transform:uppercase;letter-spacing:.08em">Bookings Timing</span><span style="font-size:13px;font-weight:700;color:#f0c040" class="mono">'+shiftLabel+'</span></div>' +
+            '<input id="sliderShift" type="range" min="-2" max="6" step="1" value="'+state.collShift+'" style="accent-color:#f0c040"/>' +
+            '<div style="font-size:10px;color:#3a5a7a;margin-top:3px">Bookings only - shifts when new booking cash arrives. AR aging unaffected.</div>' +
+          '</div>' +
+          '<div style="background:#1a2a3a;border-radius:8px;padding:11px 12px">' +
+            '<div style="font-size:10px;color:#5a7a9a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Bookings Cash Impact (18W)</div>' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:#5a7a9a">Plan cash receipts</span><span style="font-size:11px;color:#c8d8e8" class="mono">'+fmt(planBkgTotal,true)+'</span></div>' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:#5a7a9a">Scenario receipts</span><span style="font-size:11px;color:#a78bfa" class="mono">'+fmt(totalBkgCash,true)+'</span></div>' +
+            '<div style="display:flex;justify-content:space-between;border-top:1px solid #243447;padding-top:5px;margin-top:2px"><span style="font-size:11px;color:#5a7a9a;font-weight:700">Delta</span><span style="font-size:12px;color:'+(totalBkgCash>=planBkgTotal?"#4ECDC4":"#FF6B6B")+';font-weight:700" class="mono">'+fmt(totalBkgCash-planBkgTotal,true)+'</span></div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="border-top:1px solid #1a2a3a;padding-top:16px">' +
+          '<div style="font-size:10px;color:#3a5a7a;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:10px">Key Metrics</div>' +
+          kpis.map(function(k){return '<div style="margin-bottom:9px;background:#0d1b2a;border-radius:8px;padding:10px 12px;border-left:2px solid '+k.color+'"><div style="font-size:10px;color:#5a7a9a;margin-bottom:2px">'+k.label+'</div><div style="font-size:17px;font-weight:800;color:'+k.color+';letter-spacing:-.5px" class="mono">'+fmt(k.val,true)+'</div>'+(k.sub?'<div style="font-size:10px;color:#3a5a7a;margin-top:1px">'+k.sub+'</div>':"")+'</div>';}).join("") +
+        '</div>' +
+      '</div>' +
+      // RIGHT PANEL
+      '<div style="flex:1;padding:16px 20px;overflow-y:auto">' +
+        '<div style="display:flex;gap:4px;margin-bottom:14px">'+tabs+'</div>' +
+        mainContent +
+      '</div>' +
+    '</div>';
+}
+
+render();
+</script>
+
+<div id="chartTip" style="display:none;position:fixed;background:#0b1622;border:1px solid #1e2d3d;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:11px;color:#c8d8e8;pointer-events:none;z-index:9999;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.5)"></div>
+</body>
+</html>
